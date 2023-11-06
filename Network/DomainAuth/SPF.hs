@@ -20,6 +20,33 @@ import System.IO.Error
 --   based on SPF. If 'Domain' is specified from the From field of mail
 --   header, authentication is based on SenderID. If condition reaches
 --   'Limit', 'SpfPermError' is returned.
+--
+-- >>> rs <- makeResolvSeed defaultResolvConf
+--
+-- pass (IPv4 & IPv6):
+--
+-- >>> withResolver rs $ \rslv -> runSPF defaultLimit rslv "mew.org" "202.238.220.92"
+-- pass
+-- >>> withResolver rs $ \rslv -> runSPF defaultLimit rslv "iij.ad.jp" "2001:240:bb5f:86c::1:41"
+-- pass
+--
+-- hardfail:
+--
+-- >>> withResolver rs $ \rslv -> runSPF defaultLimit rslv "example.org" "192.0.2.1"
+-- hardfail
+--
+-- redirect and include:
+--
+-- >>> withResolver rs $ \rslv -> runSPF defaultLimit rslv "gmail.com" "72.14.192.1"
+-- pass
+-- >>> withResolver rs $ \rslv -> runSPF defaultLimit rslv "gmail.com" "72.14.128.1"
+-- softfail
+--
+-- limit:
+--
+-- >>> let limit1 = defaultLimit { ipv4_masklen = 24 }
+-- >>> withResolver rs $ \rslv -> runSPF limit1 rslv "gmail.com" "72.14.192.1"
+-- softfail
 
 runSPF :: Limit -> Resolver -> Domain -> IP -> IO DAResult
 runSPF lim resolver dom ip =
